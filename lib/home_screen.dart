@@ -1,15 +1,60 @@
 // ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api
 
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'fish.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  List<Fish> fishList = [];
   Color selectedColor = Colors.blue;
   double selectedSpeed = 1.0;
+  late Ticker _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Ticker(_updateFishPositions)..start();
+  }
+
+  void _addFish() {
+    if (fishList.length < 10) {
+      final random = Random();
+      setState(() {
+        fishList.add(Fish(
+          color: selectedColor,
+          speed: selectedSpeed,
+          x: random.nextDouble() * 250,
+          y: random.nextDouble() * 250,
+          dx: (random.nextDouble() - 0.5) * selectedSpeed * 2,
+          dy: (random.nextDouble() - 0.5) * selectedSpeed * 2,
+        ));
+      });
+    }
+  }
+
+  void _updateFishPositions(Duration duration) {
+    setState(() {
+      for (var fish in fishList) {
+        fish.x += fish.dx;
+        fish.y += fish.dy;
+
+        if (fish.x <= 0 || fish.x >= 270) fish.dx *= -1;
+        if (fish.y <= 0 || fish.y >= 270) fish.dy *= -1;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,20 +64,34 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                color: Colors.lightBlue.shade100,
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
-              child: Center(child: Text("Aquarium", style: TextStyle(fontSize: 20))),
+            Stack(
+              children: [
+                Container(
+                  width: 300,
+                  height: 300,
+                  decoration: BoxDecoration(
+                    color: Colors.lightBlue.shade100,
+                    border: Border.all(color: Colors.blue, width: 2),
+                  ),
+                ),
+                for (var fish in fishList)
+                  Positioned(
+                    left: fish.x,
+                    top: fish.y,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: fish.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Placeholder for now
-              },
+              onPressed: _addFish,
               child: Text("Add Fish"),
             ),
             SizedBox(height: 10),
