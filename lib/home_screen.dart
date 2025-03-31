@@ -38,6 +38,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
+  void _removeFish() {
+    if (fishList.isNotEmpty) {
+      setState(() {
+        fishList.removeLast();
+      });
+    }
+  }
+
   void _updateFishPositions(Duration duration) {
     setState(() {
       for (var fish in fishList) {
@@ -90,9 +98,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addFish,
-              child: Text("Add Fish"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _addFish,
+                  child: Text("Add Fish"),
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _removeFish,
+                  child: Text("Remove Fish"),
+                ),
+              ],
             ),
             SizedBox(height: 10),
             Text("Select Fish Color:"),
