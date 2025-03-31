@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'fish.dart';
+import 'database_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -15,11 +16,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Color selectedColor = Colors.blue;
   double selectedSpeed = 1.0;
   late Ticker _ticker;
+  final DatabaseHelper _dbHelper = DatabaseHelper(); 
 
   @override
   void initState() {
     super.initState();
     _ticker = Ticker(_updateFishPositions)..start();
+    _loadSettings();
+  }
+
+  void _loadSettings() async {
+    final settings = await _dbHelper.loadSettings();
+    if (settings != null) {
+      setState(() {
+        selectedColor = _getColorFromString(settings['fish_color']);
+        selectedSpeed = settings['fish_speed'];
+      });
+    }
+  }
+
+  Color _getColorFromString(String colorString) {
+    switch (colorString) {
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      default:
+        return Colors.blue;
+    }
   }
 
   void _addFish() {
@@ -58,6 +82,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  void _saveSettings() async {
+    await _dbHelper.saveSettings(fishList.length, selectedSpeed, _getStringFromColor(selectedColor));
+  }
+
+  String _getStringFromColor(Color color) {
+    if (color == Colors.red) return 'red';
+    if (color == Colors.green) return 'green';
+    return 'blue';
+  }
+
   @override
   void dispose() {
     _ticker.dispose();
@@ -67,7 +101,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Virtual Aquarium")),
+      appBar: AppBar(
+        title: Text("Virtual Aquarium"),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -119,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               onChanged: (Color? newColor) {
                 if (newColor != null) {
                   setState(() => selectedColor = newColor);
+                  _saveSettings();
                 }
               },
               items: [
@@ -136,7 +173,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               divisions: 5,
               label: selectedSpeed.toStringAsFixed(1),
               onChanged: (double newSpeed) {
-                setState(() => selectedSpeed = newSpeed);
+                setState(() {
+                  selectedSpeed = newSpeed;
+                  _saveSettings();
+                });
               },
             ),
           ],

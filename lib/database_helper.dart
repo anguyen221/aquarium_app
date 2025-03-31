@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -16,7 +18,7 @@ class DatabaseHelper {
       path,
       version: 1,
       onCreate: (db, version) async {
-        await db.execute('''
+        await db.execute(''' 
           CREATE TABLE settings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             fish_count INTEGER,
@@ -25,21 +27,36 @@ class DatabaseHelper {
           )
         ''');
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+      },
     );
   }
 
   Future<void> saveSettings(int fishCount, double speed, String color) async {
     final db = await database;
-    await db.insert('settings', {
-      'fish_count': fishCount,
-      'fish_speed': speed,
-      'fish_color': color,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    try {
+      await db.insert(
+        'settings',
+        {
+          'fish_count': fishCount,
+          'fish_speed': speed,
+          'fish_color': color,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print("Error saving settings: $e");
+    }
   }
 
   Future<Map<String, dynamic>?> loadSettings() async {
     final db = await database;
-    final List<Map<String, dynamic>> results = await db.query('settings', limit: 1);
-    return results.isNotEmpty ? results.first : null;
+    try {
+      final List<Map<String, dynamic>> results = await db.query('settings', limit: 1);
+      return results.isNotEmpty ? results.first : null;
+    } catch (e) {
+      print("Error loading settings: $e");
+      return null;
+    }
   }
 }
